@@ -28,8 +28,8 @@ D:\data\converted\
 D:\data\defaults\default_avatar.png
 
 5️⃣ Nếu lỗi MySQL driver
-→ Copy mysql-connector-j-8.x.jar vào
-WEB-INF\lib\  (t gửi trong nhóm)
+→ Kiểm tra mysql-connector-j-8.x.jar vào
+WEB-INF\lib\ chưa
 
 6️⃣ Chạy
 Eclipse → Run As → Run on Server → Tomcat

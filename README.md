@@ -45,4 +45,26 @@ C. Processing trả kết quả (TCP Reply)
 
 Ví dụ: OK|Success|D:/CODING/.../VideoOutput/abc_optimized.avi
 
+3 minutes ago
+
+Enhance README with testing instructions
 Nếu lỗi: ERROR|Lý do lỗi
+
+4) Test chạy thử: vào ProcessingServer.java rồi chạy, lúc này thì ProcessingServer sẽ ở trạng thái lắng nghe (listening)
+   Rồi sau đó ấn chay TestWorker.java thì lúc này sẽ kết nối tới Processing Server
+   rồi gửi chuỗi lệnh: LỆNH | ID_CÔNG_VIỆC | ĐƯỜNG_DẪN_FILE_GỐC | ĐỊNH_DẠNG_ĐÍCH | CHẾ_ĐỘ
+              tức là   command | Job ID | Input Path | Target Format | Mode
+              Ví dụ:   CONVERT|1|D:\data\uploads\test.mp4|mkv|FAST
+   Processing Server sẽ dùng chuỗi lệnh này để làm công việc convert rồi sẽ báo tiến độ và trả kết quả về cho Web server:
+   Đây là kết quả khi test:
+   === BẮT ĐẦU TEST WORKER ===
+>> Đang gửi yêu cầu Convert cho Video ID: 1
+>> Input: D:\data\uploads\test.mp4
+>> Target: mkv | Mode: FAST
+>> Đang chờ Processing Server xử lý... (Giữ kết nối 15s)
+[Worker] Created Job ID: 1. Mode: FAST
+[Worker] Sent TCP: CONVERT|1|D:\data\uploads\test.mp4|mkv|FAST
+...[Worker] Received TCP: OK|Success|D:\CODING\HK1-25-26\LTM\VideoOutput\test_fast.mkv
+[Worker] Job 1 completed successfully!
+............
+=== KẾT THÚC TEST ===

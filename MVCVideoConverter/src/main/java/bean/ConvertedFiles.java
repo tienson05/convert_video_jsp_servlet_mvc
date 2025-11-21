@@ -8,7 +8,7 @@ public class ConvertedFiles {
 	private String output_filename;
 	private String output_path;
 	private long size;
-	private int duration_seconds;
+	private double duration_seconds;
 	private Timestamp created_at;
 	
 	public int getId() {
@@ -41,10 +41,10 @@ public class ConvertedFiles {
 	public void setSize(long size) {
 		this.size = size;
 	}
-	public int getDuration_seconds() {
+	public double getDuration_seconds() {
 		return duration_seconds;
 	}
-	public void setDuration_seconds(int duration_seconds) {
+	public void setDuration_seconds(double duration_seconds) {
 		this.duration_seconds = duration_seconds;
 	}
 	public Timestamp getCreated_at() {

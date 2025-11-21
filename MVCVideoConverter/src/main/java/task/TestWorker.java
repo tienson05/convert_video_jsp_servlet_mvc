@@ -17,7 +17,7 @@ public class TestWorker {
         
         // QUAN TRỌNG: Đường dẫn này phải có thật
         mockVideo.setStored_path("D:\\data\\uploads\\test.mp4"); 
-        
+        mockVideo.setDuration_seconds(60);
         mockVideo.setOriginal_filename("test.mp4");
         mockVideo.setStatus(VideoStatus.UPLOADED);
         mockVideo.setCreated_at(new Timestamp(System.currentTimeMillis()));

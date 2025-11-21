@@ -56,15 +56,4 @@ Nếu lỗi: ERROR|Lý do lỗi
               tức là   command | Job ID | Input Path | Target Format | Mode
               Ví dụ:   CONVERT|1|D:\data\uploads\test.mp4|mkv|FAST
    Processing Server sẽ dùng chuỗi lệnh này để làm công việc convert rồi sẽ báo tiến độ và trả kết quả về cho Web server:
-   Đây là kết quả khi test:
-   === BẮT ĐẦU TEST WORKER ===
->> Đang gửi yêu cầu Convert cho Video ID: 1
->> Input: D:\data\uploads\test.mp4
->> Target: mkv | Mode: FAST
->> Đang chờ Processing Server xử lý... (Giữ kết nối 15s)
-[Worker] Created Job ID: 1. Mode: FAST
-[Worker] Sent TCP: CONVERT|1|D:\data\uploads\test.mp4|mkv|FAST
-...[Worker] Received TCP: OK|Success|D:\CODING\HK1-25-26\LTM\VideoOutput\test_fast.mkv
-[Worker] Job 1 completed successfully!
-............
-=== KẾT THÚC TEST ===
+ 

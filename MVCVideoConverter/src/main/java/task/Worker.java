@@ -81,8 +81,16 @@ public class Worker {
                         
                         cf.setJob_id(jobId);      
                         cf.setOutput_path(outputPath);
-                        cf.setSize(0);            
-                        
+                        cf.setDuration_seconds(video.getDuration_seconds());
+                     // --- LOGIC MỚI: Đọc kích thước file thật ---
+                        java.io.File resultFile = new java.io.File(outputPath);
+                        if (resultFile.exists()) {
+                            long bytes = resultFile.length();
+                            cf.setSize(bytes); // Lưu size thật (byte)
+                        } else {
+                            cf.setSize(0);
+                        }
+                        // ------------------------------------------                        
                         cfBO.addConvertedFile(cf);
 
                         // B. Cập nhật trạng thái Job -> COMPLETED

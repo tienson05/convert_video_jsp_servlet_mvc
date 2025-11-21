@@ -19,7 +19,6 @@ public class ClientHandler implements Runnable {
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
         ) {
-            // Đọc lệnh từ Web Server
             String request = in.readLine();
             System.out.println("[TCP Received] " + request);
 
@@ -31,19 +30,13 @@ public class ClientHandler implements Runnable {
                     int jobId = Integer.parseInt(parts[1]);
                     String inputPath = parts[2];
                     String format = parts[3]; 
-                    
-                    // Kiểm tra mode (NORMAL hoặc FAST)
                     String mode = (parts.length >= 5) ? parts[4] : "NORMAL";
                     
-                    // --- 1. CHUẨN BỊ THƯ MỤC OUTPUT (QUAN TRỌNG) ---
-                    // Lấy đường dẫn từ AppConfig để tách biệt Input/Output
+                    // --- 1. CHUẨN BỊ THƯ MỤC OUTPUT ---
                     File outputDir = new File(AppConfig.OUTPUT_DIR);
-                    if (!outputDir.exists()) {
-                        outputDir.mkdirs(); // Tự tạo thư mục nếu chưa có
-                    }
+                    if (!outputDir.exists()) outputDir.mkdirs();
 
-                    // --- 2. KIỂM TRA DUNG LƯỢNG Ổ ĐĨA ĐÍCH ---
-                    // Kiểm tra ổ đĩa chứa thư mục Output có còn đủ chỗ không (>500MB)
+                    // --- 2. KIỂM TRA DUNG LƯỢNG ---
                     long freeSpace = outputDir.getFreeSpace(); 
                     long safeMargin = 500 * 1024 * 1024L; 
 
@@ -51,51 +44,61 @@ public class ClientHandler implements Runnable {
                         System.err.println(">> [CRITICAL] Output Disk Full! Rejecting Job " + jobId);
                         UdpSender.sendProgress(jobId, "FAILED_DISK_FULL", 0);
                         out.println("ERROR|Server Disk Full");
-                        return; // Dừng ngay lập tức
+                        return;
                     }
 
-                    // --- 3. TẠO ĐƯỜNG DẪN FILE KẾT QUẢ ---
+                    // --- 3. TẠO ĐƯỜNG DẪN OUTPUT ---
                     File inputFile = new File(inputPath);
-                    String originalName = inputFile.getName(); // Lấy tên file gốc: "test.mp4"
-                    
-                    // Bỏ đuôi file cũ: "test"
+                    String originalName = inputFile.getName();
                     String baseName = originalName.contains(".") 
                                     ? originalName.substring(0, originalName.lastIndexOf(".")) 
                                     : originalName;
 
-                    // Tạo hậu tố tên file
+                    // Logic đặt tên file (để tạm _optimized, lát nếu fast thành công thì tốt, không thì vẫn là file này)
                     String fileNameSuffix = "FAST".equalsIgnoreCase(mode) ? "_fast" : "_optimized";
-                    
-                    // Ghép thành đường dẫn hoàn chỉnh: D:\OutputVideo\test_fast.mkv
                     String outputPath = outputDir.getAbsolutePath() + File.separator + baseName + fileNameSuffix + "." + format;
 
                     // ---------------------------------------------------------
 
                     FFmpegService ffmpeg = new FFmpegService();
-                    boolean success;
+                    boolean success = false;
 
-                    // --- LOGIC XỬ LÝ ---
+                    // --- 4. LOGIC XỬ LÝ THÔNG MINH (SMART FALLBACK) ---
+                    
                     if ("FAST".equalsIgnoreCase(mode)) {
-                        System.out.println(">> Job " + jobId + ": Detect FAST MODE -> Saving to: " + outputPath);
+                        System.out.println(">> Job " + jobId + ": Trying FAST MODE (Copy)...");
                         UdpSender.sendProgress(jobId, "PROCESSING_FAST", 0);
-                        success = ffmpeg.convertFastCopy(inputPath, outputPath);
                         
+                        // Thử chạy Fast Mode
+                        boolean fastSuccess = ffmpeg.convertFastCopy(inputPath, outputPath);
+                        
+                        if (fastSuccess) {
+                            success = true;
+                            System.out.println(">> Job " + jobId + ": Fast Mode Success!");
+                        } else {
+                            // NẾU FAST MODE THẤT BẠI -> CHUYỂN SANG NORMAL MODE
+                            System.err.println(">> [WARNING] Job " + jobId + ": Fast Mode failed (Incompatible format). Switching to NORMAL MODE...");
+                            
+                            UdpSender.sendProgress(jobId, "PROCESSING_FALLBACK", 0);
+                            
+                            // Gọi lệnh Convert thường (Nén lại)
+                            success = ffmpeg.convertVideo(inputPath, outputPath);
+                        }
+
                     } else {
+                        // Chế độ Normal (User chọn từ đầu)
                         System.out.println(">> Job " + jobId + ": Detect NORMAL MODE -> Saving to: " + outputPath);
                         UdpSender.sendProgress(jobId, "PROCESSING", 0);
-                        
-                        // Giả lập delay để Web hiển thị
                         Thread.sleep(500); 
                         UdpSender.sendProgress(jobId, "PROCESSING", 10);
                         
                         success = ffmpeg.convertVideo(inputPath, outputPath);
                     }
 
-                    // --- TRẢ KẾT QUẢ ---
+                    // --- 5. TRẢ KẾT QUẢ ---
                     if (success) {
                         System.out.println(">> Job " + jobId + " DONE! Saved at: " + outputPath);
                         UdpSender.sendProgress(jobId, "DONE", 100);
-                        // QUAN TRỌNG: Trả về đường dẫn MỚI để Web lưu vào DB
                         out.println("OK|Success|" + outputPath); 
                     } else {
                         System.err.println(">> Job " + jobId + " FAILED!");

@@ -11,8 +11,7 @@ import utils.ConnectDB;
 public class ConvertedFileDAO {
 
     public boolean addConvertedFile(ConvertedFiles cf) {
-        String sql = "INSERT INTO Converted_files (job_id, output_filename, output_path, size, created_at) VALUES (?, ?, ?, ?, NOW())";
-        
+    	String sql = "INSERT INTO Converted_files (job_id, output_filename, output_path, size, duration_seconds, created_at) VALUES (?, ?, ?, ?, ?, NOW())";        
         try (Connection conn = new ConnectDB().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -33,6 +32,8 @@ public class ConvertedFileDAO {
 
             // 4. Set File Size (Nếu Worker chưa set thì mặc định là 0)
             ps.setLong(4, cf.getSize());
+            //DÒNG NÀY ĐỂ LƯU DURATION
+            ps.setDouble(5, cf.getDuration_seconds());
 
             // Thực thi
             return ps.executeUpdate() > 0;

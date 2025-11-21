@@ -1,0 +1,36 @@
+# --- Java & IDE ---
+*.class
+/target/
+/build/
+*.iml
+/.idea/
+/.project
+/.classpath
+/.settings/
+*.log
+.DS_Store
+
+# --- VIDEO CONVERT PROJECT (NEW) ---
+
+# 1. Chặn các file video nặng (Input/Output)
+*.mp4
+*.avi
+*.mkv
+*.mov
+*.flv
+*.wmv
+*.mp3
+
+# 2. Chặn thư mục chứa video trên Server
+OutputVideo/
+uploads/
+temp/
+
+# 3. Chặn file thực thi FFmpeg (Nặng)
+ffmpeg.exe
+ffmpeg
+ffprobe.exe
+
+# 4. Chặn thư viện JAR (nếu bạn muốn repo nhẹ)
+# *.jar
+# *.war

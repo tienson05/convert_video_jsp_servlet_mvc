@@ -18,5 +18,5 @@ public class AppConfig {
     // Đường dẫn FFmpeg (Sửa lại cho đúng đường dẫn trên máy bạn)
     // Nếu đã cài biến môi trường thì chỉ cần để "ffmpeg", nếu chưa thì để đường dẫn full exe
     public static final String FFMPEG_PATH = "ffmpeg"; 
-    public static final String OUTPUT_DIR = "D:\\CODING\\HK1-25-26\\LTM\\OutputVideo";
+    public static final String OUTPUT_DIR = "D:\\CODING\\HK1-25-26\\LTM\\VideoOutput";
 }

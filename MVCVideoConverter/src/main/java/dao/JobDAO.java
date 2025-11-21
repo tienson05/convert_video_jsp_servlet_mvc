@@ -4,11 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 
 import bean.Jobs;
-// Import class kết nối DB của nhóm bạn (ví dụ DBUtil hoặc ConnectDB)
 import utils.ConnectDB; 
 
 public class JobDAO {
@@ -16,7 +13,6 @@ public class JobDAO {
     // Hàm thêm Job và TRẢ VỀ ID (Quan trọng cho Worker)
     public int addJob(Jobs job) {
         int generatedId = -1;
-        // Câu lệnh SQL (Nhớ kiểm tra lại tên bảng và tên cột trong DB của Toàn cho khớp)
         String sql = "INSERT INTO jobs (video_id, target_format, status, progress, created_at) VALUES (?, ?, ?, ?, NOW())";
         
         try (Connection conn = new ConnectDB().getConnection();
@@ -52,8 +48,7 @@ public class JobDAO {
 
         	ps.setString(1, job.getStatus().name());
             ps.setInt(2, job.getProgress());
-            ps.setInt(3, job.getJob_id()); // Lưu ý: Trong bean Jobs phải có getter getId() tương ứng với job_id
-            
+            ps.setInt(3, job.getJob_id()); // 
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();

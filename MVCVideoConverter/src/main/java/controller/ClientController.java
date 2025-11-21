@@ -146,7 +146,7 @@ public class ClientController extends HttpServlet {
 
         // Chỉ submit convert nếu trạng thái UPLOADED
         if(video.getStatus() == VideoStatus.UPLOADED){
-            Worker.submitConversionTask(video, targetFormat);
+//        	Worker.submitConversionTask(video, targetFormat, mode);
             request.setAttribute("message", "Convert task submitted. You can check status later.");
         } else {
             request.setAttribute("message", "Video is already processing or completed.");

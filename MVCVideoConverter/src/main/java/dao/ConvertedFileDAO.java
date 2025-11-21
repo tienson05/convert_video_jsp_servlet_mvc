@@ -5,13 +5,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 import bean.ConvertedFiles;
-// Import class kết nối DB của nhóm (Sửa lại cho đúng tên file của nhóm bạn)
+// Import class kết nối DB 
 import utils.ConnectDB; 
 
 public class ConvertedFileDAO {
 
     public boolean addConvertedFile(ConvertedFiles cf) {
-        // Kiểm tra lại tên bảng: 'Converted_files' hay 'converted_files' (MySQL Linux phân biệt hoa thường)
         String sql = "INSERT INTO Converted_files (job_id, output_filename, output_path, size, created_at) VALUES (?, ?, ?, ?, NOW())";
         
         try (Connection conn = new ConnectDB().getConnection();

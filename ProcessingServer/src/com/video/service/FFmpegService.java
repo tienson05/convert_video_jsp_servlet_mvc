@@ -8,14 +8,6 @@ import java.util.List;
 
 public class FFmpegService {
 
-    /**
-     * Convert video CẤP ĐỘ 2: Tối ưu hóa Tốc độ & Web Streaming
-     * - Codec: libx264 (Chuẩn nén phổ biến nhất)
-     * - Preset: veryfast (Nhanh gấp 5-10 lần mặc định)
-     * - CRF: 23 (Chất lượng ổn định, mắt thường khó thấy giảm sút)
-     * - Movflags: +faststart (Giúp xem video trên web ngay lập tức)
-     * - Resize: HD 720p
-     */
     public boolean convertVideo(String inputPath, String outputPath) {
         try {
             List<String> command = new ArrayList<>();

@@ -4,6 +4,7 @@ import java.sql.Timestamp;
 
 public class Jobs {
 	public enum JobStatus {
+		PENDING,
 		QUEUED,
 		PROCESSING,
 		COMPLETED,
@@ -16,6 +17,20 @@ public class Jobs {
 	private int progress;
 	private Timestamp created_at;
 	private Timestamp updated_at;
+	
+	public Jobs() {}
+	
+	// Constructor
+    public Jobs(int job_id, int video_id, String target_format, JobStatus status, int progress, Timestamp created_at, Timestamp updated_at) {
+        this.job_id = job_id;
+        this.video_id = video_id;
+        this.target_format = target_format;
+        this.status = status;
+        this.progress = progress;
+        this.created_at = created_at;
+        this.updated_at = updated_at;
+    }
+    
 	public int getJob_id() {
 		return job_id;
 	}

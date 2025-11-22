@@ -6,36 +6,16 @@ import java.util.List;
 
 import bean.Videos;
 import bean.Videos.VideoStatus;
+import utils.ConnectDB;
 
 public class VideoDAO {
-	// Connect DB
-		private static final String URL = "jdbc:mysql://localhost:3306/convert_video?useSSL=false&serverTimezone=UTC";
-	    private static final String USER = "root";
-	    private static final String PASSWORD = "";
-
-	    private Connection conn;
-
-	    // Constructor khởi tạo kết nối
-	    public VideoDAO() {
-	    	try {
-	    	    Class.forName("com.mysql.cj.jdbc.Driver");
-	    	    this.conn = DriverManager.getConnection(URL, USER, PASSWORD);
-
-	    	    if (this.conn != null) {
-	    	        System.out.println("Kết nối DB thành công!");
-	    	    } else {
-	    	        System.out.println("Kết nối DB thất bại: conn null");
-	    	    }
-	    	} catch (ClassNotFoundException | SQLException e) {
-	    	    System.out.println("Lỗi khi kết nối DB");
-	    	    e.printStackTrace();
-	    	}
-	    }
+	
     // Thêm video mới
     public int addVideo(Videos video) {
         String sql = "INSERT INTO videos(client_id, original_filename, stored_path, size, duration_seconds, mime_type, status, created_at) "
                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection conn = new ConnectDB().getConnection();
+        		PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, video.getClient_id());
             ps.setString(2, video.getOriginal_filename());
             ps.setString(3, video.getStored_path());
@@ -67,7 +47,8 @@ public class VideoDAO {
     // Lấy video theo ID
     public Videos getById(int videoId) {
         String sql = "SELECT * FROM videos WHERE video_id = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = new ConnectDB().getConnection();
+        		PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, videoId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -85,7 +66,8 @@ public class VideoDAO {
     public List<Videos> getByClientId(int clientId) {
         List<Videos> list = new ArrayList<>();
         String sql = "SELECT * FROM videos WHERE client_id = ? ORDER BY created_at DESC";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = new ConnectDB().getConnection();
+        		PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, clientId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -101,7 +83,8 @@ public class VideoDAO {
     // Cập nhật trạng thái video
     public boolean updateStatus(int videoId, VideoStatus status) {
         String sql = "UPDATE videos SET status = ? WHERE video_id = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = new ConnectDB().getConnection();
+        		PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, status.name());
             ps.setInt(2, videoId);
             return ps.executeUpdate() > 0;

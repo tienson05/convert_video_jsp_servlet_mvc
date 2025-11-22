@@ -1,26 +1,32 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8"%>
+<!DOCTYPE html>
 <html>
 <head>
     <title>Sign In</title>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/main.css">
 </head>
 <body>
-<h2>Sign In</h2>
 
-<% String error = (String) request.getAttribute("error"); %>
-<% if(error != null) { %>
-    <p style="color:red;"><%= error %></p>
-<% } %>
+<jsp:include page="navbar.jsp"/>
 
-<form action="<%= request.getContextPath() %>/auth/signin" method="post">
-    <label>Username:</label>
-    <input type="text" name="username" required><br><br>
+<div class="container">
+    <h2>Sign In</h2>
 
-    <label>Password:</label>
-    <input type="password" name="password" required><br><br>
+    <% String error = (String) request.getAttribute("error"); %>
+    <% if (error != null) { %>
+        <div class="alert alert-danger"><%=error%></div>
+    <% } %>
 
-    <button type="submit">Sign In</button>
-</form>
+    <form action="<%=request.getContextPath()%>/auth/signin" method="post">
+        <label>Username</label>
+        <input name="username" required>
 
-<p>Don't have an account? <a href="<%= request.getContextPath() %>/auth/signup">Sign Up</a></p>
+        <label>Password</label>
+        <input type="password" name="password" required>
+
+        <button type="submit">Sign In</button>
+    </form>
+</div>
+
 </body>
 </html>

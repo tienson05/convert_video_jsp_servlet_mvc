@@ -13,11 +13,11 @@ Dự án Java Web (Servlet/JSP + FFmpeg + MySQL)
 git clone https://github.com/username/YourProject.git
 
 2️⃣ Tạo database
-• Tạo DB tên: video_convert
+• Tạo DB tên: convert_video
 • Import file schema.sql (tạo bảng clients, videos, jobs, converted_files)
 
 3️⃣ Cấu hình DB (nếu cần)
-URL: jdbc:mysql://localhost:3306/video_convert?useSSL=false&serverTimezone=UTC
+URL: jdbc:mysql://localhost:3306/convert_video?useSSL=false&serverTimezone=UTC
 User: root
 Pass: "" (để trống nếu XAMPP mặc định)
 
@@ -38,10 +38,10 @@ Eclipse → Run As → Run on Server → Tomcat
 http://localhost:8080/TenProject/
 
 🔥 CHỨC NĂNG CHÍNH
-/user/signin      → Đăng nhập
-/user/signup      → Đăng ký
-/client/upload    → Upload video
-/client/convert   → Chọn chất lượng & convert (dùng FFmpeg)
-/client/history   → Xem lịch sử + tải video đã convert
+/user/signin → Đăng nhập
+/user/signup → Đăng ký
+/client/upload → Upload video
+/client/convert → Chọn chất lượng & convert (dùng FFmpeg)
+/client/history → Xem lịch sử + tải video đã convert
 
 Chạy xong mà bị lỗi gì thì cứ nhắn mình nhé! 🚀

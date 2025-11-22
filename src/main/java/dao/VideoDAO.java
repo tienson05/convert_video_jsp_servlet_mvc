@@ -9,9 +9,9 @@ import bean.Videos.VideoStatus;
 
 public class VideoDAO {
 	// Connect DB
-		private static final String URL = "jdbc:mysql://localhost:3306/convert_video?useSSL=false&serverTimezone=UTC";
+		private static final String URL = "jdbc:mysql://localhost:3306/video_convert?useSSL=false&serverTimezone=UTC";
 	    private static final String USER = "root";
-	    private static final String PASSWORD = "";
+	    private static final String PASSWORD = "363888";
 
 	    private Connection conn;
 

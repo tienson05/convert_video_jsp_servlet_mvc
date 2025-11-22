@@ -1,31 +1,49 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
+<%@ page contentType="text/html; charset=UTF-8"%>
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Upload Video</title>
-    <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/style.css">
+    <title>Upload</title>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/main.css">
 </head>
 <body>
+
+<jsp:include page="navbar.jsp"/>
+
+<div class="container">
     <h2>Upload Video</h2>
 
-    <!-- Hiển thị lỗi hoặc thông báo -->
-    <c:if test="${not empty error}">
-        <p style="color:red;">${error}</p>
-    </c:if>
-    <c:if test="${not empty message}">
-        <p style="color:green;">${message}</p>
-    </c:if>
+    <div id="msg"></div>
 
-    <form action="${pageContext.request.contextPath}/client/upload" method="post" enctype="multipart/form-data">
-        <label for="file">Select video:</label>
-        <input type="file" name="file" id="file" accept="video/*" required><br><br>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <label>Select File</label>
+        <input type="file" name="file" required>
 
         <button type="submit">Upload</button>
     </form>
+</div>
 
-    <br>
-    <a href="${pageContext.request.contextPath}/client/history">View Upload History</a>
+<script>
+document.getElementById("uploadForm").onsubmit = function(e){
+    e.preventDefault();
+    let msg = document.getElementById("msg");
+    msg.innerHTML = "<div class='alert alert-success'>Uploading...</div>";
+
+    const fd = new FormData(this);
+
+    fetch("<%=request.getContextPath()%>/client/upload", {
+        method: "POST",
+        body: fd
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.success){
+            msg.innerHTML = "<div class='alert alert-success'>Upload OK — video_id = "+data.video_id+"</div>";
+        } else {
+            msg.innerHTML = "<div class='alert alert-danger'>Upload failed</div>";
+        }
+    });
+}
+</script>
+
 </body>
 </html>

@@ -1,0 +1,134 @@
+/* ---- RESET ---- */
+body {
+    margin: 0;
+    padding: 0;
+    background: #f5f7fb;
+    font-family: Arial, sans-serif;
+    color: #1f2937;
+}
+
+/* ---- NAVBAR ---- */
+.navbar {
+    background: #2d6cdf;
+    padding: 14px 24px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar-title {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.navbar a {
+    color: white;
+    margin-left: 16px;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.navbar a:hover {
+    text-decoration: underline;
+}
+
+/* ---- CONTAINER / CARD ---- */
+.container {
+    width: 90%;
+    max-width: 700px;
+    margin: 40px auto;
+    background: #ffffff;
+    padding: 28px;
+    border-radius: 12px; /* Rounded soft */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ---- HEADINGS ---- */
+h1, h2 {
+    color: #111827;
+    margin-bottom: 20px;
+}
+
+/* ---- FORM ---- */
+label {
+    font-weight: bold;
+    display: block;
+    margin-top: 12px;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+    box-sizing: border-box;
+}
+
+/* ---- BUTTON ---- */
+button {
+    background: #2d6cdf;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    margin-top: 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+button:hover {
+    background: #2557b8;
+}
+
+/* ---- ALERT ---- */
+.alert {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 14px;
+}
+
+.alert-success {
+    background: #e1f7e7;
+    color: #15803d;
+}
+
+.alert-danger {
+    background: #ffe1e1;
+    color: #b91c1c;
+}
+
+/* ---- TABLE ---- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+}
+
+th {
+    padding: 10px;
+    background: #eef1f8;
+    text-align: left;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #e5e7eb;
+}
+/* ---- PROGRESS BAR ---- */
+.progress-bar {
+    width: 100%;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+    height: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #2d6cdf;
+}
+

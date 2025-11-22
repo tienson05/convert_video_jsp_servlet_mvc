@@ -29,26 +29,53 @@ public class ClientController extends HttpServlet {
 
     private VideoBO videoBO = new VideoBO();
 
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
         String path = request.getPathInfo();
         if (path == null) path = "/";
 
+        Clients client = (Clients) request.getSession().getAttribute("client");
+
         switch (path) {
+
             case "/upload":
+                // Kiểm tra login
+                if (client == null) {
+                    response.sendRedirect(request.getContextPath() + "/auth/signin");
+                    return;
+                }
                 request.getRequestDispatcher("/pages/upload.jsp").forward(request, response);
                 break;
+
             case "/convert":
+                // Kiểm tra login
+                if (client == null) {
+                    response.sendRedirect(request.getContextPath() + "/auth/signin");
+                    return;
+                }
+
+                // Lấy danh sách video để hiển thị trong combobox
+                List<Videos> videos = videoBO.getVideosByClientId(client.getClient_id());
+                request.setAttribute("videos", videos);
+
                 request.getRequestDispatcher("/pages/convert.jsp").forward(request, response);
                 break;
+
             case "/history":
                 showHistory(request, response);
                 break;
+
             default:
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
         String path = request.getPathInfo();
         if (path == null) path = "/";
 
@@ -56,26 +83,31 @@ public class ClientController extends HttpServlet {
             case "/upload":
                 handleUpload(request, response);
                 break;
+
             case "/convert":
                 handleConvert(request, response);
                 break;
+
             default:
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 
-    // Upload video
-    private void handleUpload(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    // ====== UPLOAD VIDEO ======
+    private void handleUpload(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
         Clients client = (Clients) request.getSession().getAttribute("client");
         if (client == null) {
-        	request.getRequestDispatcher("/pages/signin.jsp").forward(request, response);
+            request.getRequestDispatcher("/pages/signin.jsp").forward(request, response);
             return;
         }
 
         Part filePart = request.getPart("file");
         if (filePart == null || filePart.getSize() == 0) {
-            request.setAttribute("error", "No file selected");
-            request.getRequestDispatcher("/pages/upload.jsp").forward(request, response);
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"success\":false,\"error\":\"No file selected\"}");
             return;
         }
 
@@ -84,6 +116,7 @@ public class ClientController extends HttpServlet {
 
         String originalFilename = filePart.getSubmittedFileName();
         String newFilename = System.currentTimeMillis() + "_" + originalFilename;
+
         String uploadPath = uploadDir.getAbsolutePath() + "/" + newFilename;
 
         try (InputStream input = filePart.getInputStream();
@@ -94,77 +127,97 @@ public class ClientController extends HttpServlet {
             while ((bytesRead = input.read(buffer)) != -1) {
                 output.write(buffer, 0, bytesRead);
             }
-        } catch(IOException e){
+
+        } catch (IOException e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            response.getWriter().write("Error saving file on server.");
+            response.setContentType("application/json");
+            response.getWriter().write("{\"success\":false,\"error\":\"File save error\"}");
             return;
         }
 
-        // Lưu vào DB
+        // Lưu DB
         Videos video = new Videos();
         video.setClient_id(client.getClient_id());
         video.setOriginal_filename(originalFilename);
         video.setStored_path(uploadPath);
         video.setSize(filePart.getSize());
         video.setMime_type(filePart.getContentType());
-        video.setDuration_seconds(0); // Có thể cập nhật sau khi convert
+        video.setDuration_seconds(0);
         video.setCreated_at(new Timestamp(System.currentTimeMillis()));
         video.setStatus(VideoStatus.UPLOADED);
 
         int video_id = videoBO.addVideo(video);
 
-        if(video_id != -1) {
-            response.setStatus(HttpServletResponse.SC_OK);
-            // trả về video_id dưới dạng JSON
-            response.setContentType("application/json");
+        response.setContentType("application/json");
+
+        if (video_id != -1) {
             response.getWriter().write("{\"success\":true,\"video_id\":" + video_id + "}");
         } else {
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            response.setContentType("application/json");
             response.getWriter().write("{\"success\":false}");
         }
-       
     }
-    
-    // Convert Video
-    private void handleConvert(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+    // ====== CONVERT VIDEO ======
+    private void handleConvert(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        Clients client = (Clients) request.getSession().getAttribute("client");
+        if (client == null) {
+            response.sendRedirect(request.getContextPath() + "/auth/signin");
+            return;
+        }
+
         String videoIdParam = request.getParameter("video_id");
-        String targetFormat  = request.getParameter("target_format");
-        if(videoIdParam == null){
-            request.setAttribute("error", "No video selected for convert!");
-            request.getRequestDispatcher("/pages/convert.jsp").forward(request, response);
+        String targetFormat = request.getParameter("target_format");
+
+        if (videoIdParam == null || targetFormat == null) {
+            request.setAttribute("error", "Missing parameters");
+            reloadConvertPage(request, response, client);
             return;
         }
 
         int videoId = Integer.parseInt(videoIdParam);
         Videos video = videoBO.getVideoById(videoId);
-        if(video == null){
-            request.setAttribute("error", "Video not found!");
-            request.getRequestDispatcher("/pages/convert.jsp").forward(request, response);
+
+        if (video == null) {
+            request.setAttribute("error", "Video not found");
+            reloadConvertPage(request, response, client);
             return;
         }
 
-        // Chỉ submit convert nếu trạng thái UPLOADED
-        if(video.getStatus() == VideoStatus.UPLOADED){
+        if (video.getStatus() == VideoStatus.UPLOADED) {
             Worker.submitConversionTask(video, targetFormat);
-            request.setAttribute("message", "Convert task submitted. You can check status later.");
+            request.setAttribute("message", "Conversion started. Check history later.");
         } else {
             request.setAttribute("message", "Video is already processing or completed.");
         }
 
+        reloadConvertPage(request, response, client);
+    }
+
+    // Load lại convert.jsp kèm danh sách video
+    private void reloadConvertPage(HttpServletRequest request, HttpServletResponse response, Clients client)
+            throws ServletException, IOException {
+
+        List<Videos> videos = videoBO.getVideosByClientId(client.getClient_id());
+        request.setAttribute("videos", videos);
+
         request.getRequestDispatcher("/pages/convert.jsp").forward(request, response);
     }
 
-    // Xem lịch sử
-    private void showHistory(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    // ====== HISTORY ======
+    private void showHistory(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
         Clients client = (Clients) request.getSession().getAttribute("client");
         if (client == null) {
-            response.sendRedirect(request.getContextPath() + "/user/signin");
+            response.sendRedirect(request.getContextPath() + "/auth/signin");
             return;
         }
 
         List<Videos> videos = videoBO.getVideosByClientId(client.getClient_id());
         request.setAttribute("videos", videos);
+
         request.getRequestDispatcher("/pages/history.jsp").forward(request, response);
     }
 }

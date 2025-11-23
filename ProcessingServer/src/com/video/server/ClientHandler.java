@@ -23,14 +23,17 @@ public class ClientHandler implements Runnable {
             System.out.println("[TCP Received] " + request);
 
             if (request != null && request.startsWith(AppConfig.CMD_CONVERT)) {
-                // Protocol: CONVERT|jobId|inputPath|outputFormat|MODE
                 String[] parts = request.split(AppConfig.PROTOCOL_SEPARATOR);
                 
                 if (parts.length >= 4) {
                     int jobId = Integer.parseInt(parts[1]);
-                    String inputPath = parts[2];
+                    String rawInputPath = parts[2];
+                    // Thay thế tất cả dấu / thành \ để Windows hiểu
+                    String inputPath = rawInputPath.replace("/", "\\"); 
+                    // ----------------------------------------------
+
                     String format = parts[3]; 
-                    String mode = (parts.length >= 5) ? parts[4] : "NORMAL";
+                    // Không cần quan tâm biến 'mode' gửi sang nữa, vì mình luôn tự động xử lý
                     
                     // --- 1. CHUẨN BỊ THƯ MỤC OUTPUT ---
                     File outputDir = new File(AppConfig.OUTPUT_DIR);
@@ -38,61 +41,48 @@ public class ClientHandler implements Runnable {
 
                     // --- 2. KIỂM TRA DUNG LƯỢNG ---
                     long freeSpace = outputDir.getFreeSpace(); 
-                    long safeMargin = 500 * 1024 * 1024L; 
-
-                    if (freeSpace < safeMargin) {
+                    if (freeSpace < 500 * 1024 * 1024L) {
                         System.err.println(">> [CRITICAL] Output Disk Full! Rejecting Job " + jobId);
                         UdpSender.sendProgress(jobId, "FAILED_DISK_FULL", 0);
                         out.println("ERROR|Server Disk Full");
                         return;
                     }
 
-                    // --- 3. TẠO ĐƯỜNG DẪN OUTPUT ---
+                    // --- 3. TẠO ĐƯỜNG DẪN FILE ĐẦU RA ---
                     File inputFile = new File(inputPath);
                     String originalName = inputFile.getName();
+                    
+                    // Lấy tên file không đuôi
                     String baseName = originalName.contains(".") 
                                     ? originalName.substring(0, originalName.lastIndexOf(".")) 
                                     : originalName;
 
-                    // Logic đặt tên file (để tạm _optimized, lát nếu fast thành công thì tốt, không thì vẫn là file này)
-                    String fileNameSuffix = "FAST".equalsIgnoreCase(mode) ? "_fast" : "_optimized";
-                    String outputPath = outputDir.getAbsolutePath() + File.separator + baseName + fileNameSuffix + "." + format;
+                    // Đặt tên file chung là _converted (hoặc _new) cho thống nhất
+                    String outputPath = outputDir.getAbsolutePath() + File.separator + baseName + "_converted." + format;
 
                     // ---------------------------------------------------------
 
                     FFmpegService ffmpeg = new FFmpegService();
                     boolean success = false;
 
-                    // --- 4. LOGIC XỬ LÝ THÔNG MINH (SMART FALLBACK) ---
+                    // --- 4. QUY TRÌNH XỬ LÝ TỰ ĐỘNG (AUTO SMART) ---
                     
-                    if ("FAST".equalsIgnoreCase(mode)) {
-                        System.out.println(">> Job " + jobId + ": Trying FAST MODE (Copy)...");
-                        UdpSender.sendProgress(jobId, "PROCESSING_FAST", 0);
-                        
-                        // Thử chạy Fast Mode
-                        boolean fastSuccess = ffmpeg.convertFastCopy(inputPath, outputPath);
-                        
-                        if (fastSuccess) {
-                            success = true;
-                            System.out.println(">> Job " + jobId + ": Fast Mode Success!");
-                        } else {
-                            // NẾU FAST MODE THẤT BẠI -> CHUYỂN SANG NORMAL MODE
-                            System.err.println(">> [WARNING] Job " + jobId + ": Fast Mode failed (Incompatible format). Switching to NORMAL MODE...");
-                            
-                            UdpSender.sendProgress(jobId, "PROCESSING_FALLBACK", 0);
-                            
-                            // Gọi lệnh Convert thường (Nén lại)
-                            success = ffmpeg.convertVideo(inputPath, outputPath);
-                        }
-
+                    System.out.println(">> Job " + jobId + ": Auto-processing started. Trying FAST MODE first...");
+                    UdpSender.sendProgress(jobId, "PROCESSING_FAST", 0);
+                    
+                    // BƯỚC A: Thử chạy Fast Mode (Copy luồng)
+                    boolean fastSuccess = ffmpeg.convertFastCopy(inputPath, outputPath, jobId);                    
+                    if (fastSuccess) {
+                        success = true;
+                        System.out.println(">> Job " + jobId + ": Fast Mode Success! (Instant Copy)");
                     } else {
-                        // Chế độ Normal (User chọn từ đầu)
-                        System.out.println(">> Job " + jobId + ": Detect NORMAL MODE -> Saving to: " + outputPath);
-                        UdpSender.sendProgress(jobId, "PROCESSING", 0);
-                        Thread.sleep(500); 
-                        UdpSender.sendProgress(jobId, "PROCESSING", 10);
+                        // BƯỚC B: Nếu Fast thất bại -> Tự động chuyển sang Normal
+                        System.err.println(">> [AUTO-SWITCH] Job " + jobId + ": Fast Mode not compatible. Switching to NORMAL MODE (Re-encoding)...");
                         
-                        success = ffmpeg.convertVideo(inputPath, outputPath);
+                        UdpSender.sendProgress(jobId, "PROCESSING_FALLBACK", 0);
+                        
+                        // Chạy lệnh Normal (Ultrafast preset)
+                        success = ffmpeg.convertVideo(inputPath, outputPath, jobId);
                     }
 
                     // --- 5. TRẢ KẾT QUẢ ---
@@ -101,7 +91,7 @@ public class ClientHandler implements Runnable {
                         UdpSender.sendProgress(jobId, "DONE", 100);
                         out.println("OK|Success|" + outputPath); 
                     } else {
-                        System.err.println(">> Job " + jobId + " FAILED!");
+                        System.err.println(">> Job " + jobId + " FAILED ALL ATTEMPTS!");
                         UdpSender.sendProgress(jobId, "FAILED", 0);
                         out.println("ERROR|Failed");
                     }

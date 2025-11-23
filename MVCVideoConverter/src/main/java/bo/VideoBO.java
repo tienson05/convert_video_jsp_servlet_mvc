@@ -33,4 +33,5 @@ public class VideoBO {
     public boolean updateVideoStatus(int videoId, VideoStatus status) {
         return videoDAO.updateStatus(videoId, status);
     }
+    
 }

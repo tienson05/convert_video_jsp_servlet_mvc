@@ -1,121 +1,139 @@
 package com.video.service;
 
 import com.video.config.AppConfig;
+import com.video.network.UdpSender;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FFmpegService {
 
-    public boolean convertVideo(String inputPath, String outputPath) {
+    public boolean convertVideo(String inputPath, String outputPath, int jobId) {
         try {
             List<String> command = new ArrayList<>();
             command.add(AppConfig.FFMPEG_PATH);
+            command.add("-i"); command.add(inputPath);
             
-            // 1. Input file
-            command.add("-i");
-            command.add(inputPath);
+            // --- CẤU HÌNH CHỐNG LAG & TĂNG TỐC ---
             
-            // --- PHẦN TỐI ƯU (OPTIMIZATION LEVEL 2) ---
-            
-            // A. Ép sử dụng Codec H.264 (Để các tham số bên dưới hoạt động chuẩn nhất)
-            command.add("-c:v");
-            command.add("libx264");
+            // 1. GIỚI HẠN SỐ LUỒNG CPU (Quan trọng để không bị đơ máy)
+            // Máy bạn 12 nhân -> Để 6 hoặc 8 thôi. Để lại tài nguyên cho Win chạy.
+            command.add("-threads"); 
+            command.add("6"); 
 
-            // B. Preset: 'veryfast' 
-            // Tốc độ xử lý cực nhanh, file sinh ra dung lượng hợp lý.
-            command.add("-preset");
-            command.add("veryfast");
-            
-            // C. CRF (Constant Rate Factor): 23
-            // Đây là mức cân bằng vàng. Số càng nhỏ càng nét (file nặng), số càng lớn càng mờ.
-            // 23 là chuẩn mặc định cho chất lượng HD/Web.
-            command.add("-crf");
-            command.add("23");
+            if (outputPath.endsWith(".webm")) {
+                // === CẤU HÌNH WEBM (VP9) SIÊU TỐC ===
+                command.add("-c:v"); command.add("libvpx-vp9");
+                command.add("-c:a"); command.add("libopus");
+                
+                // Giảm chất lượng nén để tăng tốc độ (Quan trọng nhất)
+                command.add("-deadline"); command.add("realtime"); 
+                command.add("-cpu-used"); command.add("8"); // Mức cao nhất (nhanh nhất)
+                
+                // Kích hoạt đa luồng cho VP9 (nhưng bị giới hạn bởi -threads ở trên)
+                command.add("-row-mt"); command.add("1");   
+                
+                // Giới hạn Bitrate để file không bị phình to quá
+                command.add("-b:v"); command.add("1M"); 
 
-            // D. Movflags: +faststart (QUAN TRỌNG CHO WEB)
-            // Chuyển metadata (thông tin video) lên đầu file. 
-            // Giúp trình duyệt load là chạy ngay, không cần tải hết file.
-            command.add("-movflags");
-            command.add("+faststart");
-
-            // E. Resize về chuẩn HD (1280px chiều ngang)
-            // Nếu không cần resize thì bạn có thể comment 2 dòng này lại.
-            command.add("-vf");
-            command.add("scale=1280:-2"); 
-            
-            // F. Audio Codec: AAC
-            // Đảm bảo âm thanh nghe được trên mọi trình duyệt/điện thoại
-            command.add("-c:a");
-            command.add("aac");
-
-            // 2. Ghi đè file nếu tồn tại
-            command.add("-y");
-            
-            // 3. Output file
-            command.add(outputPath);
-
-            // --- THỰC THI LỆNH ---
-            ProcessBuilder builder = new ProcessBuilder(command);
-            builder.redirectErrorStream(true); // Gộp luồng lỗi vào luồng chính để đọc log
-            Process process = builder.start();
-
-            // Đọc log FFmpeg (Bắt buộc phải có để giải phóng bộ nhớ đệm, tránh treo tiến trình)
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                // Uncomment dòng dưới nếu muốn xem log FFmpeg chạy thế nào trong Console
-                // System.out.println("[FFmpeg]: " + line);
+            } else {
+                // === CẤU HÌNH MP4/AVI... ===
+                // MP4 thì nhẹ nên cứ để ultrafast
+                command.add("-c:v"); command.add("libx264");
+                command.add("-c:a"); command.add("aac");
+                command.add("-preset"); command.add("ultrafast");
+                command.add("-movflags"); command.add("+faststart");
             }
 
-            int exitCode = process.waitFor();
-            return exitCode == 0; // Trả về true nếu thành công (exit = 0)
+            // Resize về HD (720p) để giảm tải tính toán
+            command.add("-vf"); command.add("scale=1280:-2"); 
+            
+            command.add("-y"); command.add(outputPath);
+
+            // --- THỰC THI ---
+            return executeCommand(command, jobId);
 
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
     }
-    /**
-     * LEVEL 3: SMART COPY (Siêu tốc độ)
-     * Chỉ thay đổi đuôi file (Container), giữ nguyên luồng video/audio bên trong.
-     * Tốc độ: < 5 giây cho video 1 tiếng.
-     */
-    public boolean convertFastCopy(String inputPath, String outputPath) {
+
+    public boolean convertFastCopy(String inputPath, String outputPath, int jobId) {
         try {
             List<String> command = new ArrayList<>();
             command.add(AppConfig.FFMPEG_PATH);
+            command.add("-i"); command.add(inputPath);
+            command.add("-c"); command.add("copy");
             
-            command.add("-i"); 
-            command.add(inputPath);
-            
-            // CỜ QUAN TRỌNG NHẤT: -c copy
-            // Nghĩa là: "Copy nguyên si, cấm giải mã/nén lại"
-            command.add("-c");
-            command.add("copy");
-            
-            // Vẫn thêm movflags để hỗ trợ Web tốt hơn nếu định dạng đích là MP4/MOV
             if (outputPath.endsWith(".mp4") || outputPath.endsWith(".mov")) {
-                command.add("-movflags");
-                command.add("+faststart");
+                command.add("-movflags"); command.add("+faststart");
             }
+            command.add("-y"); command.add(outputPath);
 
-            command.add("-y");
-            command.add(outputPath);
+            return executeCommand(command, jobId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // HÀM CHUNG
+    private boolean executeCommand(List<String> command, int jobId) {
+        try {
+            System.out.println(">> [CMD]: " + String.join(" ", command));
 
             ProcessBuilder builder = new ProcessBuilder(command);
-            builder.redirectErrorStream(true);
+            builder.redirectErrorStream(true); 
             Process process = builder.start();
 
-            // Vẫn phải đọc log
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            while (reader.readLine() != null) {}
+            String line;
+            
+            double totalDuration = 0;
+            int lastPercent = 0;
+            Pattern timePattern = Pattern.compile("(\\d{2}):(\\d{2}):(\\d{2})");
 
+            while ((line = reader.readLine()) != null) {
+                if (line.contains("Duration:") && totalDuration == 0) {
+                    String[] parts = line.split("Duration: ");
+                    if (parts.length > 1) {
+                        String timeStr = parts[1].split(",")[0];
+                        totalDuration = parseTimeToSeconds(timeStr);
+                    }
+                }
+                if (line.contains("time=") && totalDuration > 0) {
+                    Matcher matcher = timePattern.matcher(line);
+                    if (matcher.find()) {
+                        String currentTimeStr = matcher.group(0);
+                        double currentSeconds = parseTimeToSeconds(currentTimeStr);
+                        int percent = (int) ((currentSeconds / totalDuration) * 100);
+                        if (percent > lastPercent && percent <= 100) {
+                            lastPercent = percent;
+                            UdpSender.sendProgress(jobId, "PROCESSING", percent);
+                        }
+                    }
+                }
+                // In lỗi nếu có (để debug)
+                if(line.toLowerCase().contains("error")) System.err.println(line);
+            }
             return process.waitFor() == 0;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
+    }
+
+    private double parseTimeToSeconds(String timeStr) {
+        try {
+            String[] parts = timeStr.split(":");
+            double h = Double.parseDouble(parts[0]);
+            double m = Double.parseDouble(parts[1]);
+            double s = Double.parseDouble(parts[2]);
+            return h * 3600 + m * 60 + s;
+        } catch (Exception e) { return 0; }
     }
 }

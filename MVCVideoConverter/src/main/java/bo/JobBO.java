@@ -1,6 +1,7 @@
 package bo;
 
 import java.util.List;
+
 import bean.Jobs;
 import dao.JobDAO;
 
@@ -14,6 +15,14 @@ public class JobBO {
 
     public boolean updateJob(Jobs job) {
         return jobDAO.updateJob(job);
+    }
+    
+    public List<Jobs> getAllJobsByClientId(int clientId) {
+    	return jobDAO.getAllJobs(clientId);
+    }
+    
+    public Jobs getJob(int jobId) {
+    	return jobDAO.getJob(jobId);
     }
     
 }

@@ -4,8 +4,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 import bean.Jobs;
+import bean.Jobs.JobStatus;
 import utils.ConnectDB; 
 
 public class JobDAO {
@@ -54,6 +58,60 @@ public class JobDAO {
             e.printStackTrace();
         }
         return false;
+    }
+    
+    public List<Jobs> getAllJobs(int clientId) {
+        List<Jobs> jobsList = new ArrayList<>();
+        String sql = "SELECT j.* FROM jobs j " +
+                     "INNER JOIN videos v ON j.video_id = v.video_id " +
+                     "WHERE v.client_id = ?";
+
+        try (Connection conn = new ConnectDB().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clientId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    jobsList.add(extract(rs));
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return jobsList;
+    }
+    
+    public Jobs getJob(int jobId) {
+        String sql = "SELECT * FROM jobs WHERE job_id = ?";
+
+        try (Connection conn = new ConnectDB().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, jobId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return extract(rs);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null; // nếu không tìm thấy
+    }
+    
+    public static Jobs extract(ResultSet rs) throws Exception {
+        int jobId = rs.getInt("job_id");
+        int videoId = rs.getInt("video_id");
+        String targetFormat = rs.getString("target_format");
+        JobStatus status = JobStatus.valueOf(rs.getString("status"));
+        int progress = rs.getInt("progress");
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        Timestamp updatedAt = rs.getTimestamp("updated_at");
+        return new Jobs(jobId, videoId, targetFormat, status, progress, createdAt, updatedAt);
     }
 }
 

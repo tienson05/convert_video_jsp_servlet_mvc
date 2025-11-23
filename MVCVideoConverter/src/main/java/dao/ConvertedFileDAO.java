@@ -3,6 +3,12 @@ package dao;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 import bean.ConvertedFiles;
 // Import class kết nối DB 
@@ -45,11 +51,25 @@ public class ConvertedFileDAO {
         return false;
     }
     
-    // (Tùy chọn) Hàm lấy file kết quả theo Job ID để hiển thị nút Download
-    /*
-    public ConvertedFiles getConvertedFileByJobId(int jobId) {
-        // Code select * from Converted_files where job_id = ? ...
-        return null;
+    public ConvertedFiles getFileByJobId(int jobId) throws SQLException {
+    	String sql = "SELECT * FROM converted_files WHERE job_id = ?";
+        try (Connection conn = new ConnectDB().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, jobId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    ConvertedFiles file = new ConvertedFiles();
+                    file.setId(rs.getInt("id"));
+                    file.setJob_id(rs.getInt("job_id"));
+                    file.setOutput_filename(rs.getString("output_filename"));
+                    file.setOutput_path(rs.getString("output_path"));
+                    file.setSize(rs.getLong("size"));
+                    file.setDuration_seconds(rs.getDouble("duration_seconds"));
+                    file.setCreated_at(rs.getTimestamp("created_at"));
+                    return file;
+                }
+            }
+        }
+        return null; // không tìm thấy
     }
-    */
-}
+} 

@@ -1,48 +1,81 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-
+<%@ page contentType="text/html; charset=UTF-8"%>
+<%@ page import="java.util.List, bean.Videos"%>
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Convert Video</title>
-    <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/style.css">
+    <title>Convert</title>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/main.css">
 </head>
 <body>
+
+<jsp:include page="navbar.jsp"/>
+
+<div class="container">
+
     <h2>Convert Video</h2>
 
-    <c:if test="${not empty error}">
-        <p style="color:red;">${error}</p>
-    </c:if>
-    <c:if test="${not empty message}">
-        <p style="color:green;">${message}</p>
-    </c:if>
+    <% String err = (String)request.getAttribute("error"); %>
+    <% String msg = (String)request.getAttribute("message"); %>
 
-    <form action="${pageContext.request.contextPath}/client/convert" method="post">
-        <label for="video_id">Select video:</label>
-        <select name="video_id" id="video_id" required>
-            <c:forEach var="video" items="${videos}">
-                <option value="${video.video_id}">${video.original_filename}</option>
-            </c:forEach>
-        </select><br><br>
+    <% if(err != null){ %><div class="alert alert-danger"><%=err%></div><% } %>
+    <% if(msg != null){ %><div class="alert alert-success"><%=msg%></div><% } %>
 
-        <label for="target">Target format:</label>
-        <select name="target" id="target" required>
-            <option value="mp4">MP4</option>
-            <option value="webm">WebM</option>
-            <option value="gif">GIF</option>
-            <option value="mkv">MKV</option> 
-        </select><br><br>
+    <p style="margin-bottom: 12px;">
+        After submitting a convert request, you can check status in <b>My Jobs</b>.
+    </p>
+
+    <%
+        List<Videos> list = (List<Videos>) request.getAttribute("videos");
+    %>
+
+    <form action="<%=request.getContextPath()%>/client/convert" method="post">
+
+        <label>Select Video</label>
+        <select name="video_id" required>
+            <% if(list != null){ for(Videos v : list){ %>
+                <option value="<%=v.getVideo_id()%>">
+                    [ID <%=v.getVideo_id()%>] <%=v.getOriginal_filename()%>
+                </option>
+            <% }} %>
+        </select>
+
+        <label for="target">Target Format:</label>
+<select name="target_format" id="target" required style="padding: 5px; border-radius: 4px;">
+    
+    <optgroup label="Video Phổ Biến">
+        <option value="mp4" selected>MP4 (H.264 - Tương thích tốt nhất)</option>
+        <option value="mkv">MKV (Matroska - Chất lượng cao)</option>
+        <option value="avi">AVI (Định dạng cũ)</option>
+    </optgroup>
+
+    <optgroup label="Web & Thiết bị khác">
+        <option value="webm">WEBM (Dành cho Web/Youtube)</option>
+        <option value="mov">MOV (Dành cho MacOS/iPhone)</option>
+        <option value="wmv">WMV (Windows Media Video)</option>
+        <option value="flv">FLV (Flash Video cũ)</option>
+    </optgroup>
+
+</select>
+
+        <!-- Tham số thêm: độ phân giải (BE có thể dùng hoặc bỏ qua) -->
+        <label>Resolution (optional)</label>
+        <select name="resolution">
+            <option value="">Original</option>
+            <option value="480p">480p</option>
+            <option value="720p">720p</option>
+            <option value="1080p">1080p</option>
+        </select>
         
-        <label>
-            <input type="checkbox" name="fast_mode" value="yes"> Fast Mode (Smart Copy)
-        </label><br><br>
+<!--        <label>Mode (optional)</label>
+        <select name="mode">
+            <option value="normal">Normal</option>
+            <option value="fast">Fast</option>
+        </select> -->
 
-        <button type="submit">Convert</button>
+        <button type="submit">Start Convert</button>
     </form>
 
-    <br>
-    <a href="${pageContext.request.contextPath}/client/history">View Conversion History</a>
+</div>
+
 </body>
 </html>

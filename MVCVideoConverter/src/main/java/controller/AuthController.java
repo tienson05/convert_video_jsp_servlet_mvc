@@ -36,8 +36,9 @@ public class AuthController extends HttpServlet {
                 break;
             case "/logout":
                 request.getSession().invalidate();
-                response.sendRedirect(request.getContextPath() + "/user/signin");
+                response.sendRedirect(request.getContextPath() + "/auth/signin");
                 break;
+
             default:
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }

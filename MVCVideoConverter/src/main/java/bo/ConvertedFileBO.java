@@ -1,5 +1,7 @@
 package bo;
 
+import java.sql.SQLException;
+
 import bean.ConvertedFiles;
 import dao.ConvertedFileDAO;
 
@@ -12,5 +14,7 @@ public class ConvertedFileBO {
         return cfDAO.addConvertedFile(cf);
     }
     
-    // Các hàm khác nếu cần...
+    public ConvertedFiles getFileByJobId(int jobId) throws SQLException {
+    	return cfDAO.getFileByJobId(jobId);
+    }
 }
